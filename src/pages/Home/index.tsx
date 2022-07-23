@@ -10,9 +10,11 @@ import * as S from './styles'
 const newCycleFormValidationSchema = zod.object({
   task: zod.string().min(1, 'Informe a tarefa'),
   minutesAmount: zod.number()
-    .min(5, 'O ciclo precisa ser de no mínimo 5 minutos')
+    .min(1, 'O ciclo precisa ser de no mínimo 5 minutos')
     .max(60, 'O ciclo precisa ser de no máximo 60 minutos'),
 })
+
+type StatusTimer = 'interrupted' | 'finished'
 
 type NewCycleFormData = zod.infer<typeof newCycleFormValidationSchema>
 
@@ -22,6 +24,7 @@ type Cycle = {
   minutesAmount: number
   startDate: Date
   interruptedDate?: Date
+  finishedDate?: Date
 }
 
 export function Home() {
@@ -51,18 +54,48 @@ export function Home() {
   const minutes = minutesAmount < 10 ? `0${minutesAmount}` : `${minutesAmount}`
   const seconds = secondsAmount < 10 ? `0${secondsAmount}` : `${secondsAmount}`
 
-  //console.log(formState.errors);  
+  //console.log(formState.errors);
+
+  function controlStateTimer(status: StatusTimer) {
+
+    const statusTimer = {
+      interrupted: 'interruptedDate',
+      finished: 'finishedDate',
+    }
+
+    setCycles(state => state.map(cycle => {
+      if (cycle.id === activeCycleId) {
+        return { ...cycle, [statusTimer[status]]: new Date() }
+      } else {
+        return cycle
+      }
+    }))
+  }
 
   useEffect(() => {
     let interval: number;
 
     if (activeCycle) {
       interval = setInterval(() => {
-        setAmountSecondsPassed(differenceInSeconds(new Date(), activeCycle.startDate))
+
+        const secondsDiff = differenceInSeconds(new Date(), activeCycle.startDate)
+
+        if (secondsDiff >= totalSeconds) {
+
+          controlStateTimer('finished');
+
+          clearInterval(interval);
+
+          setAmountSecondsPassed(totalSeconds);
+
+        } else {
+          setAmountSecondsPassed(secondsDiff)
+        }
+
       }, 1000)
     }
     return () => clearInterval(interval)
-  }, [activeCycle])
+  }, [activeCycle, totalSeconds, controlStateTimer]);
 
   useEffect(() => {
     if (activeCycle) {
@@ -90,17 +123,8 @@ export function Home() {
     setActiveCycleId(null);
     setAmountSecondsPassed(0);
 
-    setCycles(cycles.map(cycle => {
-      if (cycle.id === activeCycleId) {
-        return { ...cycle, interruptedDate: new Date() }
-      } else {
-        return cycle
-      }
-    }))
-
+    controlStateTimer('interrupted');
   }
-
-
 
   return (
     <S.HomeContainer>
@@ -128,7 +152,7 @@ export function Home() {
             type="number"
             placeholder="00"
             step={5}
-            min={5}
+            min={1}
             max={60}
             disabled={!!activeCycle}
             {...register('minutesAmount', { valueAsNumber: true })}

@@ -53,13 +53,21 @@ export function Home() {
   //console.log(formState.errors);  
 
   useEffect(() => {
+    let interval: number;
+
     if (activeCycle) {
-      const interval = setInterval(() => {
+      interval = setInterval(() => {
         setAmountSecondsPassed(differenceInSeconds(new Date(), activeCycle.startDate))
       }, 1000)
-      return () => clearInterval(interval)
     }
+    return () => clearInterval(interval)
   }, [activeCycle])
+
+  useEffect(() => {
+    if (activeCycle) {
+      document.title = `${activeCycle.task} - ${minutes}:${seconds}`
+    }
+  }, [minutes, seconds, activeCycle]);
 
   function handleCreateNewCycle(data: NewCycleFormData) {
 
@@ -72,6 +80,7 @@ export function Home() {
 
     setCycles(state => [...state, newCycle]);
     setActiveCycleId(newCycle.id);
+    setAmountSecondsPassed(0);
 
     reset();
   }

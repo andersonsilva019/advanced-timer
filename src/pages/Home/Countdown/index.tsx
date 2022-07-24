@@ -1,7 +1,7 @@
 import { useContext } from 'react'
 import { differenceInSeconds } from 'date-fns';
-import { useEffect, useState } from 'react'
-import { CycleContext } from '..';
+import { useEffect } from 'react'
+import { CycleContext } from '../../../contexts/CycleContext';
 
 import * as S from './styles'
 
